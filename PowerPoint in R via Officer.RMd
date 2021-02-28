@@ -1,0 +1,169 @@
+---
+title: "PowerPoint in R via Officer"
+output: html_notebook
+---
+
+```{r}
+library(tidyverse)
+library(officer)
+library(quantmod)
+library(yfinance)
+library(ggdark)
+library(rvg)
+
+
+get_placeholder_dims <- function(presentation, label, dim = "width", unit = "in") {
+   layout <- officer::layout_properties(presentation)
+   ifelse(
+     dim=="width",
+     dimension <- layout$cx[match(label, layout$ph_label)],
+     dimension <- layout$cy[match(label, layout$ph_label)]
+   )
+   
+   if (unit == "in") {
+     dimension
+   } else if (unit == "px") {
+     dimension*96
+   } else if (unit == "cm") {
+     dimension * 2.54
+   } else stop(glue::glue("Only 'in', 'px' and 'cm' are supported as units. You entered '{unit}'."))
+}
+
+```
+
+
+
+```{r}
+presentation <- read_pptx("stock_summary_template.pptx")
+
+ticker <- "GOOG"
+
+company_name <- yfinance::get_company_names(ticker)
+summary <- yfinance::get_summaries(ticker)
+
+ttm_performance_path <- glue::glue("presentations/images/{ticker} TTM Chart.png")
+
+prices <- getSymbols(ticker, from=Sys.Date()-365, to = Sys.Date(), auto.assign = FALSE)
+
+png(filename = ttm_performance_path, 
+    width = get_placeholder_dims(presentation, "TTM Perfromance", dim ="width", unit = "px"),
+    height = get_placeholder_dims(presentation, "TTM Perfromance", dim = "hight", unit = "px")
+    )
+chartSeries(prices, name = glue::glue("{ticker} - 12 Months"), type="line")
+
+dev.off()
+
+```
+
+```{r}
+ebit_margin <- 
+  get_income(ticker) %>% 
+  mutate(
+    ebit_margin = ebit / totalRevenue
+  ) %>% 
+  ggplot()+
+  geom_bar(mapping = aes(x = date, y = ebit_margin), stat = "identity", fill = "#5efc82", width = 0.4)+
+  geom_text(
+    mapping = aes(x = date, y = ebit_margin, label = paste0(round(ebit_margin*100, 2), "%")),
+    vjust = -0.2
+  )+
+  scale_y_continuous(labels = scales::percent_format(accuracy = 1))+
+  labs(title = "EBIT Margin", x = "Date", y = "EBIT Margin")+
+  dark_theme_gray()+
+  theme(
+    text = element_text(size = 11),
+    plot.background =element_blank(), 
+    panel.background = element_blank(),
+    panel.grid.major = element_line(color = "grey30", size = 0.2),
+    panel.grid.minor = element_blank()
+  )
+  
+```
+
+
+```{r}
+sales_growth <- 
+  get_income(ticker) %>% 
+  arrange(date) %>% 
+  mutate(
+    sales_growth = totalRevenue / lag(totalRevenue) - 1
+  ) %>% 
+  dplyr::filter(!is.na(sales_growth)) %>% 
+  ggplot()+
+  geom_bar(mapping = aes(x = date, y = sales_growth), stat = "identity", fill = "#6200ea", width = 0.4)+
+  geom_text(
+    mapping = aes(x = date, y = sales_growth, label = paste0(round(sales_growth*100, 2), "%")),
+    vjust = -0.2
+  )+
+  scale_y_continuous(labels = scales::percent_format(accuracy = 1))+
+  labs(title = "Sales Growth", x = "Date", y = "Sales Growth")+
+  dark_theme_gray()+
+  theme(
+    text = element_text(size = 11),
+    plot.background = element_blank(),
+    panel.background = element_blank(),
+    panel.grid.major = element_line(color = "grey30", size = 0.2),
+    panel.grid.minor = element_blank()
+  )
+```
+
+
+```{r}
+
+my_pres <- presentation %>% 
+        remove_slide(index = 1) %>% 
+        add_slide(layout = "Company Summary", master = "Office Theme") %>%
+        ph_with(value = company_name, location = ph_location_label(ph_label = "Company Name")  ) %>% 
+        ph_with(value = ticker, location = ph_location_label(ph_label = "Ticker")  ) %>% 
+        ph_with(value = glue::glue("Sector: {summary$sector}") , location = ph_location_label(ph_label = "Sector")  ) %>% 
+        ph_with(value = glue::glue("Industry: {summary$industry}"), location = ph_location_label(ph_label = "Industry")  ) %>% 
+        ph_with(value = summary$longBusinessSummary, location = ph_location_label(ph_label = "Company Summary")  ) %>% 
+        ph_with(value = external_img(ttm_performance_path), location = ph_location_label(ph_label = "TTM Perfromance")  ) %>% 
+        ph_with(value = rvg::dml(ggobj = sales_growth, bg = "transparent"), location = ph_location_label(ph_label = "Sales Growth")  ) %>% 
+        ph_with(value = rvg::dml(ggobj = ebit_margin, bg = "transparent"), location = ph_location_label(ph_label = "EBIT Margin")  ) 
+
+print(my_pres, glue::glue("presentations/{company_name} Summary {Sys.Date()}.pptx"))
+
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
