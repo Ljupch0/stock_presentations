@@ -36,7 +36,7 @@ get_placeholder_dims <- function(presentation, label, dim = "width", unit = "in"
 ```{r}
 presentation <- read_pptx("stock_summary_template.pptx")
 
-ticker <- "GOOG"
+ticker <- "BRK-B"
 
 company_name <- yfinance::get_company_names(ticker)
 summary <- yfinance::get_summaries(ticker)

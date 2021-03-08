@@ -1,0 +1,43 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+```{r}
+library(tidyverse)
+library(officer)
+library(quantmod)
+library(yfinance)
+
+
+```
+
+
+```{r}
+read_pptx("example_stock_summary.pptx") %>% 
+  officer::layout_properties()
+
+
+pres <- read_pptx("example_stock_summary.pptx")
+```
+```{r}
+ticker <- "AA"
+
+company_name <- yfinance::get_company_names(ticker)
+summary <- yfinance::get_summaries(ticker)
+```
+
+
+
+
+```{r}
+my_pres <- pres %>% 
+        remove_slide(index = 1) %>% 
+        add_slide(layout = "Stock Presentation", master = "Office Theme") %>%
+        ph_with(value = company_name, location = ph_location_label(ph_label = "Company Name")  ) %>% 
+        ph_with(value = summary$longBusinessSummary, location = ph_location_label(ph_label = "Company Description"))
+
+
+print(my_pres, glue::glue("presentations/Example {company_name} Summary {Sys.Date()}.pptx"))
+```
+
