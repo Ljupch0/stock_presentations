@@ -128,3 +128,13 @@ pres <- read_pptx("stock_summary_template.pptx") %>%
 print(pres, glue::glue("presentations/FAANG Summaries {Sys.Date()}.pptx"))
 ```
 
+```
+initial_object <- read_pptx("stock_summary_template.pptx") %>% 
+  remove_slide(index = 1)
+  
+pres_reduce <- reduce(tickers, 
+                      company_slide, 
+                      chart_path = "presentations/images",
+                      .init = initial_object)
+```
+
