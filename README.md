@@ -1,5 +1,5 @@
 # stock_presentations
-An example of PowerPoint slide automation with R. Tutorial at [ljupcho.com/blog/powerpoint_officer](ljupcho.com/blog/powerpoint_officer)
+An example of PowerPoint slide automation with R. Tutorial at [ljupcho.com/blog/powerpoint_officer](https://ljupcho.com/blog/powerpoint_officer)
 
 A video tutorial is also available
 
